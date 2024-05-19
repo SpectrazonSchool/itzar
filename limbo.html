@@ -1,0 +1,204 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Shuffle Game</title>
+    <style>
+        body {
+            background-image: url('bg.png');
+            background-size: cover;
+            background-repeat: no-repeat;
+            background-attachment: fixed;
+            background-position: center;
+            font-family: Arial, sans-serif;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+        }
+
+        .container {
+            text-align: center;
+            display: flex;
+            flex-direction: column;
+            align-items: center; /* Center horizontally */
+        }
+
+        .keys {
+            margin-top: 20px;
+        }
+
+        .key {
+            width: 100px;
+            height: 100px;
+            background-image: url('limbo.png');
+            background-size: cover;
+            margin: 10px;
+            border-radius: 5px;
+            cursor: pointer;
+            position: absolute;
+            transition: transform 0.1s ease, filter 0.5s ease;
+        }
+
+        .key.correct {
+            filter: brightness(0) saturate(100%) invert(38%) sepia(89%) saturate(373%) hue-rotate(75deg) brightness(96%) contrast(89%);
+        }
+
+        #result {
+            margin-top: 20px;
+            font-size: 1.2em;
+            color: #e74c3c;
+            animation: shake 0.5s ease-in-out; /* Shake animation */
+        }
+
+        @keyframes shake {
+            0% { transform: translateX(0); }
+            25% { transform: translateX(-5px); }
+            50% { transform: translateX(5px); }
+            75% { transform: translateX(-5px); }
+            100% { transform: translateX(0); }
+        }
+
+        #startBtn {
+            padding: 10px 20px;
+            font-size: 1.2em;
+            background-color: #3498db;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            transition: background-color 0.3s;
+            margin-bottom: 20px;
+        }
+
+        #startBtn:hover {
+            background-color: #2980b9;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <button id="startBtn">Start</button>
+        <div class="keys">
+            <div class="key" data-key="1"></div>
+            <div class="key" data-key="2"></div>
+            <div class="key" data-key="3"></div>
+            <div class="key" data-key="4"></div>
+            <div class="key" data-key="5"></div>
+            <div class="key" data-key="6"></div>
+            <div class="key" data-key="7"></div>
+            <div class="key" data-key="8"></div>
+        </div>
+        <div id="result" class="result-message"></div>
+        <audio id="shuffleSound" src="isolation.mp3"></audio>
+    </div>
+    <script>
+        const keyWidth = 100; // Width of each key
+        const keyMargin = 10; // Margin between keys
+        const containerWidth = 480; // Width of the container
+        const keysPerRow = 4; // Number of keys per row
+
+        // Calculate the total width of all keys and margins
+        const totalWidth = keysPerRow * keyWidth + (keysPerRow - 1) * keyMargin;
+
+        const marginLeft = -220; // Adjust this value as needed
+
+        document.addEventListener('DOMContentLoaded', () => {
+            const startBtn = document.getElementById('startBtn');
+            const keys = document.querySelectorAll('.key');
+            let correctKey;
+            const keyPositions = [
+                {x: marginLeft, y: 0}, {x: marginLeft + keyWidth + keyMargin, y: 0},
+                {x: marginLeft + 2 * (keyWidth + keyMargin), y: 0}, {x: marginLeft + 3 * (keyWidth + keyMargin), y: 0},
+                {x: marginLeft, y: keyWidth + keyMargin}, {x: marginLeft + keyWidth + keyMargin, y: keyWidth + keyMargin},
+                {x: marginLeft + 2 * (keyWidth + keyMargin), y: keyWidth + keyMargin}, {x: marginLeft + 3 * (keyWidth + keyMargin), y: keyWidth + keyMargin}
+            ];
+
+            keys.forEach((key, index) => {
+                key.style.transform = `translate(${keyPositions[index].x}px, ${keyPositions[index].y}px)`;
+            });
+
+            startBtn.addEventListener('click', () => {
+                const shuffleSound = document.getElementById('shuffleSound');
+                shuffleSound.currentTime = 0; // Restart music
+                shuffleSound.play();
+                selectRandomKey();
+                flashCorrectKey();
+            });
+
+            keys.forEach(key => {
+                key.addEventListener('click', () => {
+                    if (key.dataset.key == correctKey) {
+                        document.getElementById('result').textContent = 'You win!';
+                    } else {
+                        document.getElementById('result').textContent = 'You lose!';
+                    }
+                });
+            });
+
+            function shuffleKeys() {
+                for (let i = keyPositions.length - 1; i > 0; i--) {
+                    const j = Math.floor(Math.random() * (i + 1));
+                    [keyPositions[i], keyPositions[j]] = [keyPositions[j], keyPositions[i]];
+                }
+            }
+            function animateShuffle() {
+
+                const totalDuration = 10000; // Total duration in milliseconds (10 seconds)
+                const shuffleDuration = 400; // Duration of each shuffle in milliseconds
+                const numShuffles = totalDuration / shuffleDuration; // Number of shuffles
+
+                let currentShuffle = 0;
+
+                function shuffleKeysOnce() {
+                    if (currentShuffle === Math.floor(numShuffles / 2)) {
+                        keys.forEach(key => {
+                            key.style.backgroundImage = "url('limbo2.png')";
+                        });
+                    }
+                    shuffleKeys();
+                    keys.forEach((key, index) => {
+                        key.style.transform = `translate(${keyPositions[index].x}px, ${keyPositions[index].y}px)`;
+                    });
+                }
+
+                // Recursive function to perform shuffling
+                function performShuffle() {
+                    if (currentShuffle < numShuffles) {
+                        shuffleKeysOnce();
+                        currentShuffle++;
+                        setTimeout(performShuffle, shuffleDuration);
+                    } else {
+                        // Change the keys back to the original sprite after animation completes
+                        keys.forEach(key => {
+                            key.style.backgroundImage = "url('limbo.png')";
+                        });
+                    }
+                }
+
+                // Start the animation
+                performShuffle();
+            }
+            function selectRandomKey() {
+                animateShuffle();
+                correctKey = Math.floor(Math.random() * 8) + 1;
+                console.log('Correct Key is: ', correctKey); // For debugging
+                
+            }
+
+            
+
+            function flashCorrectKey() {
+                const correctKeyElement = document.querySelector(`.key[data-key="${correctKey}"]`);
+                correctKeyElement.classList.add('correct');
+                setTimeout(() => {
+                    correctKeyElement.classList.remove('correct');
+                }, 1000);
+            }
+        });
+    </script>
+</body>
+</html>
+
